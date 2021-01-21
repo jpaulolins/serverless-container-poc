@@ -113,28 +113,28 @@ Abaixo  é possível ver um docker file que foi criado para o ambiente de DEV
 ```dockerfile
 
 FROM golang:1.15 AS build
-WORKDIR /example
+WORKDIR /teste
 COPY . .
-RUN CGO_ENABLED=0 go build -ldflags="-s -w"
+RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o main
 
 FROM public.ecr.aws/c2t6n2x5/serverlessish:2 AS s
+
+#FROM gcr.io/distroless/static
 
 FROM alpine
 
 RUN apk add --no-cache bash
 
-ADD
-https://github.com/aws/aws-lambda-runtime-interface-emulator/releases/latest/download/aws-lambda-rie
-/usr/bin/aws-lambda-rie
+ADD https://github.com/aws/aws-lambda-runtime-interface-emulator/releases/latest/download/aws-lambda-rie /usr/bin/aws-lambda-rie
 
 RUN chmod 755 /usr/bin/aws-lambda-rie
-COPY entry.sh /
+COPY ./entry.sh /
 RUN chmod 755 /entry.sh
 
 COPY --from=s /opt/extensions/serverlessish /opt/extensions/serverlessish
-COPY --from=build /example/example /example
+COPY --from=build /teste/main /main
 
-ENV PORT=8081
+ENV PORT=8081 
 
 ENTRYPOINT ["/entry.sh"]
 
@@ -143,13 +143,70 @@ ENTRYPOINT ["/entry.sh"]
 No caso ambiente de DEV foi criado um container do alpine para se instalar um
 Bash e desta forma conseguir fazer algum teste / depuração.
 
+#### Para roda o ambiente de dev
+
+*Build do Container Docker*
+
+```
+docker build -f ./Dockerfiles/dev/Dockerfile -t container/serverless:dev .
+```
+
+*Rodando o container*
+
+```
+docker run --name serverteste -p 8080:8080 -p9090:8081 -it container/serverless:dev
+```
+
+Com isso vamos ter a aplicação de teste rodando na porta 9090 e a emulação do
+lambda na porta 8080.
+
+Commando CURL que emula uma chama o endpoint /ping
+
+```
+curl -XPOST "http://localhost:8080/2015-03-31/functions/function/invocations" -d @teste.json
+```
+Command CURL que emula uma chamada no /
+
+```
+curl -XPOST "http://localhost:8080/2015-03-31/functions/function/invocations" -d @teste2.json
+```
+
+Com isso foi possível ver que o nosso ambiente de *DEV* está funcional
+e podemos ver que a Extensão lambda foi devidamenta carregada repassando
+a chamada de fato para o servidor http também instalado no container.
+
+Caso seja necessário logar no container e verificar algo ou fazer alguma
+troubleshooting você poderá usar o seguinte comando:
+
+```
+docker exec -it serverteste /bin/bash
+```
 
 
 ### Produção
 
-Para o ambiente de produção basta fazer o buid da imagem seguindo o arquivo `Dockerfile-PROD`.
+Para o ambiente de produção basta fazer o buid da imagem seguindo o arquivo `Dockerfile` que está em `./Dockerfiles/prod`.
 
-Observe que nesse caso está sendo usado o conceito de Distroless e foram
-removidos a parte de emulação. Com isso basta apenas .... e pronto.
+```
+docker build -f ./Dockerfiles/prod/Dockerfile -t container/serverless:dev .
+```
 
+Rodando o container de PROD localmente para realizar testes.
+
+```
+docker run --name serverteste -p9090:8081 -it container/serverless:prod
+```
+Neste caso por se tratar de um serviço HTTP e neste examplo os seguintes
+endpoints deverão responder.
+
+`http://localhost:9090/ping` => `OK`
+
+`http://localhost:9090/` => `this is what i received on port 8081:`
+
+No caso deste `Dockerfile` do PROD está sendo usado o conceito de Distroless e foram
+removidos a parte de emulação do ambiente de DEV. 
+
+Daqui por diante basta seguir com o Deploy do container de forma similar ao que
+foi feito neste artigo
+[AWS.](https://aws.amazon.com/pt/blogs/aws/new-for-aws-lambda-container-image-support/) 
 

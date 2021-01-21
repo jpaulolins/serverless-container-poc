@@ -1,0 +1,6 @@
+{
+    "resource": "Resource path",
+    "path": "/ping",
+    "httpMethod": "GET",
+    "isBase64Encoded":false
+}

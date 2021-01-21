@@ -1,0 +1,7 @@
+{
+    "resource": "Resource path",
+    "path": "/:",
+    "httpMethod": "GET",
+    "isBase64Encoded":false
+}
+
