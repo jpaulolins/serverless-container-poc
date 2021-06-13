@@ -3,7 +3,10 @@ WORKDIR /teste
 COPY . .
 RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o main
 
-FROM public.ecr.aws/c2t6n2x5/serverlessish:2 AS s
+#test local build
+FROM serverlessish:dev AS s
+
+#FROM public.ecr.aws/c2t6n2x5/serverlessish:2 AS s
 
 #FROM gcr.io/distroless/static
 

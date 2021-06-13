@@ -188,7 +188,7 @@ docker exec -it serverteste /bin/bash
 Para o ambiente de produção basta fazer o buid da imagem seguindo o arquivo `Dockerfile` que está em `./Dockerfiles/prod`.
 
 ```
-docker build -f ./Dockerfiles/prod/Dockerfile -t container/serverless:dev .
+docker build -f ./Dockerfiles/prod/Dockerfile -t container/serverless:prod .
 ```
 
 Rodando o container de PROD localmente para realizar testes.
